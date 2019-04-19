@@ -43,7 +43,7 @@ private:
 	std::mutex mutex; //std::mutex is more efficient than std::shared_(timed_)mutex
 };
 
-//Container must at least has the following functions (like std::list):
+//Container must at least has the following functions (like std::forward_list):
 // Container() and Container(size_t) constructor
 // size, must be thread safe, but doesn't have to be consistent
 // empty, must be thread safe, but doesn't have to be consistent
@@ -51,8 +51,8 @@ private:
 // swap
 // template<typename T> emplace_back(const T& item), if you call direct_(sync_)send_msg which accepts other than rvalue reference
 // template<typename T> emplace_back(T&& item)
-// splice(iter, Container&)
-// splice(iter, Container&, iter, iter)
+// splice_after(Container&)
+// splice_after_until(Container&, iter)
 // front
 // pop_front
 // back
@@ -117,7 +117,7 @@ public:
 		if (0 == size_in_byte)
 			size_in_byte = ascs::get_size_in_byte(src);
 
-		this->splice(this->end(), src);
+		this->splice_after(src);
 		buff_size += size_in_byte;
 	}
 
@@ -127,7 +127,7 @@ public:
 	{
 		if ((size_t) -1 == max_item_num)
 		{
-			dest.splice(std::end(dest), *this);
+			dest.splice_after(*this);
 			buff_size = 0;
 		}
 		else if (max_item_num > 0)
@@ -137,9 +137,9 @@ public:
 			do_something_to_one_([&](const_reference item) {if (++index > max_item_num) return true; s += item.size(); ++end_iter; return false;});
 
 			if (end_iter == this->end())
-				dest.splice(std::end(dest), *this);
+				dest.splice_after(*this);
 			else
-				dest.splice(std::end(dest), *this, this->begin(), end_iter);
+				dest.splice_after_until(*this, end_iter);
 			buff_size -= s;
 		}
 	}
@@ -148,7 +148,7 @@ public:
 	{
 		if ((size_t) -1 == max_size_in_byte)
 		{
-			dest.splice(std::end(dest), *this);
+			dest.splice_after(*this);
 			buff_size = 0;
 		}
 		else
@@ -158,9 +158,9 @@ public:
 			do_something_to_one_([&](const_reference item) {s += item.size(); ++end_iter; if (s >= max_size_in_byte) return true; return false;});
 
 			if (end_iter == this->end())
-				dest.splice(std::end(dest), *this);
+				dest.splice_after(*this);
 			else
-				dest.splice(std::end(dest), *this, this->begin(), end_iter);
+				dest.splice_after_until(*this, end_iter);
 			buff_size -= s;
 		}
 	}
